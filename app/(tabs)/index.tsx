@@ -1,87 +1,131 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNotes } from "./useNotes";
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const {
+    notes,
+    note,
+    setNote,
+    searchQuery,
+    setSearchQuery,
+    currentEditingIndex,
+    onPressAdd,
+    onPressSave,
+    onPressCancel,
+    onPressEditItem,
+    onPressDeleteItem,
+  } = useNotes();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  return (
+    <SafeAreaView style={{ flex: 1, paddingHorizontal: 16 }}>
+      <View style={{ flex: 1 }}>
+        {currentEditingIndex === null && (
+          <TouchableOpacity
+            style={{
+              alignSelf: "center",
+              borderWidth: 1,
+              borderRadius: 8,
+              padding: 8,
+              width: "95%",
+            }}
+            onPress={onPressAdd}
+          >
+            <Text style={{ color: "grey", fontSize: 18, textAlign: "center" }}>
+              Add new +
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {currentEditingIndex !== null && (
+          <>
+            <TextInput
+              style={{
+                borderBottomWidth: 1,
+                borderBottomColor: "grey",
+                fontSize: 18,
+                marginVertical: 16,
+                padding: 8,
+              }}
+              placeholder="write your note here"
+              value={note}
+              onChangeText={setNote}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-evenly",
+                marginBottom: 20,
+              }}
+            >
+              <TouchableOpacity onPress={onPressSave}>
+                <Text style={{ color: "navy", fontSize: 16, fontWeight: 600 }}>
+                  Save
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onPressCancel}>
+                <Text style={{ fontSize: 16 }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        <Text
+          style={{
+            fontSize: 18,
+            textDecorationLine: "underline",
+            fontWeight: "600",
+            marginBottom: 10,
+          }}
+        >
+          All Notes
+        </Text>
+        <TextInput style={{borderBottomWidth:1,marginBottom:20,fontSize:16,padding:8}} placeholder="search" value={searchQuery} onChangeText={setSearchQuery} />
+        <FlatList
+          data={notes}
+          renderItem={({ item, index }) => {
+            return (
+              <View
+                key={item?.id}
+                style={{
+                  borderWidth: 1,
+                  borderColor: "black",
+                  marginHorizontal: 5,
+                  padding: 10,
+                  borderRadius: 8,
+                }}
+              >
+                <Text>{item?.noteValue}</Text>
+                <View style={{ flexDirection: "row", gap: 10, marginTop: 8 }}>
+                  <TouchableOpacity onPress={() => onPressEditItem({ item })}>
+                    <Text>edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => onPressDeleteItem({ id: item?.id })}
+                  >
+                    <Text style={{ color: "red" }}>delete</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          }}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   stepContainer: {
@@ -93,6 +137,6 @@ const styles = StyleSheet.create({
     width: 290,
     bottom: 0,
     left: 0,
-    position: 'absolute',
+    position: "absolute",
   },
 });
